@@ -1,7 +1,8 @@
 .register {
     text-align: center;
+    margin: 0 30%;
 }
 
-.register p{
+.register p {
     color: #aaa;
 }
