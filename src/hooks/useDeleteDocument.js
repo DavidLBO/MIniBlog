@@ -1,17 +1,17 @@
 import {useState, useEffect, useReducer} from "react";
 import {db} from "../firebase/config";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { doc, deleteDoc } from "firebase/firestore";
 
 const initialState = {
     loading: null,
     error: null
 };
 
-const insertReducer = (state, action) => {
+const deleteReducer = (state, action) => {
     switch(action.type) {
         case "LOADING":
             return {loading: true, error: null};
-        case "INSERTED_DOC":
+        case "DELETED_DOC":
             return {loading: false, error: null};
         case "ERROR":
             return {loading: false, error: action.payload};
@@ -20,8 +20,8 @@ const insertReducer = (state, action) => {
     }
 };
 
-export const useInsertDocument = (docCollection) => {
-    const [response, dispatch] = useReducer(insertReducer, initialState);
+export const useDeleteDocument = (docCollection) => {
+    const [response, dispatch] = useReducer(deleteReducer, initialState);
 
     // deal with memory leak
     const [cancelled, setCancelled] = useState(false);
@@ -31,20 +31,16 @@ export const useInsertDocument = (docCollection) => {
             dispatch(action)
         }
     };
-    const insertDocument = async(document) => {
+    const deleteDocument = async(id) => {
         checkCancelBeforeDispatch({
             type: "LOADING"
         });
         try {
-            const newDocument = {...document, createAt: Timestamp.now()};
+            const deletedDocument = await deleteDoc(doc(db, docCollection, id))
 
-            const insertedDocument = await addDoc(
-                collection(db, docCollection), 
-                newDocument
-            );
             checkCancelBeforeDispatch({
-                type: "INSERTED_DOC",
-                payload: insertedDocument,
+                type: "DELETED_DOC",
+                payload: deletedDocument,
             });
         } catch (error) {
             checkCancelBeforeDispatch({
@@ -58,5 +54,5 @@ export const useInsertDocument = (docCollection) => {
         return () => setCancelled(true);
     }, []);
 
-    return {insertDocument, response};
+    return {deleteDocument, response};
 }
